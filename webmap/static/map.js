@@ -131,11 +131,7 @@ legend.onAdd = function (map) {
     return div;
 };
 
-legend.addTo(map);
-
-var speciesFilterDropdown = document.createElement('select');
-speciesFilterDropdown.id = 'speciesFilter';
-document.body.appendChild(speciesFilterDropdown);
+var speciesFilterDropdown = document.getElementById('speciesFilter');
 
 speciesFilterDropdown.addEventListener('change', handleSpeciesFilter);
 
@@ -154,6 +150,8 @@ function handleFileSelect(event) {
         reader.onload = function (e) {
             var csvData = e.target.result;
             plotMarkers(csvData);
+            legend.addTo(map);
+            speciesFilterDropdown.style.display = 'block';
         };
 
         reader.readAsText(file);
