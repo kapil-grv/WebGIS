@@ -351,14 +351,12 @@ function handleSpeciesFilter() {
         
         console.log("matchCount => " + matchCount);
         if (!matchCount > 0) {
-            alert("Selected tree not found in this area: " + selectedSpecies);
+            alert("Selected tree plantation not found in this area: " + selectedSpecies);
         } else {
-            alert("No. of trees not found in this area that belong to: " + selectedSpecies + " are - " + matchCount);
+            alert("No. of tree plantations found in this area that belong to: " + selectedSpecies + " are - " + matchCount);
         }
     }
 }
-
-
 
 function isMarkerInsideCircles(marker, circles) {
     return circles.some(function (circle) {
