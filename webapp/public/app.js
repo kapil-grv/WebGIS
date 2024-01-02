@@ -1,3 +1,5 @@
+var insertCall = true;
+
 // Fetch Mapbox access token from the server
 fetch('/mapbox-token')
   .then(response => response.json())
@@ -12,24 +14,15 @@ fetch('/mapbox-token')
       zoom: 9 // Initial zoom level
     });
 
-    // Add markers or other geospatial data to the map as needed
-    // You can use Mapbox GL JS API for various map manipulations
-
-    // Sample data insertion
-    fetch('/insert', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        latitude: 40.7128,
-        longitude: -74.0060,
-        data: 'Sample Data',
-      }),
-    })
-    .then(response => response.json())
-    .then(data => console.log(data))
-    .catch(error => console.error('Error inserting data:', error));
+    if (insertCall) {
+      // Sample data insertion
+      fetch('/insert', {method: 'POST'})
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error('Error inserting data:', error));
+      
+      insertCall = false;
+    }
 
     // Sample data retrieval
     fetch('/fetch')

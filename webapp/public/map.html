@@ -14,20 +14,28 @@
         #openBtn { font-size: 20px; cursor: pointer; position: absolute; margin-left: 15px; margin-top: 10px; }
         #datasets { position: absolute; top: 10px; left: 10px; z-index: 1; }
         .dataset-option { margin-bottom: 5px; }
+
+        #legend {position: absolute; bottom: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
+        #legend-content div {display: inline-block; width: 20px; height: 20px; margin-right: 5px;}
+
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="legend" class="mapboxgl-ctrl">
+        <h4>Legend</h4>
+        <div id="legend-content"></div>
+    </div>
     <div id="sidePanel">
         <a href="#" onclick="toggleSidePanel()">☰ Close</a>
         <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="trees"> Trees
+            <input type="checkbox" name="dataset" value="asset"> Asset
         </label>
         <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="rivers"> Rivers
+            <input type="checkbox" name="dataset" value="nursery"> Nursery
         </label>
         <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="buildings"> Buildings
+            <input type="checkbox" name="dataset" value="plantation"> Plantation
         </label>
     </div>
     <div id="openBtn" onclick="toggleSidePanel()">☰ Open</div>
@@ -38,34 +46,84 @@
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [-73.9918, 40.7359], // Set the center coordinates
-            zoom: 12 // Set the zoom level
+            center: [-74.5, 40], // Set the center coordinates
+            zoom: 3 // Set the zoom level
         });
 
-        let previousState = Array.from(document.querySelectorAll('input[name="dataset"]')).map(checkbox => checkbox.checked);
+        // Initialize legend when the map is loaded
+        map.on('load', () => {
+            // Create a custom control for the legend
+            const legendControl = new mapboxgl.NavigationControl({ showCompass: true });
+            legendControl.onAdd = function () {
+                const legendDiv = document.getElementById('legend');
+                return legendDiv;
+            };
 
-        document.querySelectorAll('.dataset-option input').forEach((checkbox, index) => {
-            checkbox.addEventListener('change', () => {
-                const currentState = Array.from(document.querySelectorAll('input[name="dataset"]')).map(checkbox => checkbox.checked);
+            // Add the legend control to the map
+            map.addControl(legendControl);
+        });
 
-                const unselectedDatasetIndex = currentState.findIndex((checked, i) => previousState[i] && !checked);
-                const unselectedDataset = unselectedDatasetIndex !== -1 ? document.querySelectorAll('input[name="dataset"]')[unselectedDatasetIndex].value : null;
+        // Function to get the initial state of dataset checkboxes
+        function getInitialState() {
+            return Array.from(document.querySelectorAll('input[name="dataset"]')).map(checkbox => checkbox.checked);
+        }
 
-                console.log(`Unselected dataset: ${unselectedDataset}`);
-                if (unselectedDataset) {
-                    map.removeLayer(`points-${unselectedDataset}`);
-                    map.removeSource(`${unselectedDataset}`);
+        // Initialize previousState
+        let previousState = getInitialState();
+
+        // Function to update map based on selected datasets
+        function updateMap(selectedDatasets) {
+            selectedDatasets.forEach(dataset => {
+                if (map.getSource(`${dataset}`)) {
+                    // Dataset is already loaded, do nothing
+                    console.log(`Dataset "${dataset}" is already loaded.`);
+                } else {
+                    // Fetch and load geospatial data for the selected dataset
+                    console.log(`Loading dataset: ${dataset}`);
+                    loadDatasets([dataset]);
                 }
+            });
+        }
 
-                previousState = currentState;
+        // Function to handle checkbox changes
+        function handleCheckboxChange(checkboxes) {
+            // Get the current state of checkboxes
+            const currentState = Array.from(checkboxes).map(checkbox => checkbox.checked);
 
-                const selectedDatasets = currentState
-                    .map((checked, i) => (checked ? document.querySelectorAll('input[name="dataset"]')[i].value : null))
-                    .filter(dataset => dataset !== null);
+            // Find the unselected dataset (if any)
+            const unselectedDatasetIndex = currentState.findIndex((checked, i) => previousState[i] && !checked);
+            const unselectedDataset = unselectedDatasetIndex !== -1 ? checkboxes[unselectedDatasetIndex].value : null;
 
-                console.log(`Selected datasets: ${selectedDatasets}`);
-                console.log(`Triggering load / unload for => ${selectedDatasets}`);
-                loadDatasets(selectedDatasets);
+            console.log(`Unselected dataset: ${unselectedDataset}`);
+            if (unselectedDataset) {
+                // Unload the unselected dataset from the map
+                map.removeLayer(`layer-${unselectedDataset}`);
+                map.removeSource(`${unselectedDataset}`);
+            }
+
+            // Update previous state
+            previousState = currentState;
+
+            // Get selected datasets
+            const selectedDatasets = currentState
+                .map((checked, i) => (checked ? checkboxes[i].value : null))
+                .filter(dataset => dataset !== null);
+
+            console.log(`Selected datasets: ${selectedDatasets}`);
+            console.log(`Triggering load / unload for => ${selectedDatasets}`);
+            
+            // Update the map based on the selected datasets
+            updateMap(selectedDatasets);
+        }
+
+        // Get all dataset checkboxes
+        const datasetCheckboxes = document.querySelectorAll('.dataset-option input');
+
+        // Add event listener to each checkbox
+        datasetCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                // Handle checkbox change
+                handleCheckboxChange(datasetCheckboxes);
             });
         });
 
@@ -87,13 +145,23 @@
             }
         }
 
+        // Function to update the legend
+        function updateLegend(color) {
+            legendContent = `<div style="background-color: ${color};"></div> Layer Color`;
+            document.getElementById('legend-content').innerHTML = legendContent;
+        }
+
         function loadDatasets(datasets) {
             datasets.forEach(dataset => {
                 if (map.getSource(`${dataset}`)) {
                     // Dataset is already loaded, remove the layer and source
-                    map.removeLayer(`points-${dataset}`);
+                    map.removeLayer(`layer-${dataset}`);
                     map.removeSource(`${dataset}`);
                 } else {
+
+                    let randomColor = getRandomColor();
+                    updateLegend(randomColor);
+
                     // Fetch geospatial data from the server based on the selected dataset
                     fetch(`/fetch/${dataset}`)
                         .then(response => response.json())
@@ -104,18 +172,60 @@
                                 data: data
                             });
 
-                            // Add a layer to the map
-                            map.addLayer({
-                                id: `points-${dataset}`,
-                                type: 'circle',
-                                source: `${dataset}`,
-                                paint: {
-                                    'circle-radius': 4,
-                                    'circle-color': getRandomColor()
-                                }
-                            });
+                            // Determine the geometry type (Point or Polygon)
+                            const geometryType = data.features[0].geometry.type;
+
+                            // Add a layer to the map based on the geometry type
+                            if (geometryType === 'Point') {
+                                // For Point geometries
+                                map.addLayer({
+                                    id: `layer-${dataset}`,
+                                    type: 'circle',
+                                    source: `${dataset}`,
+                                    paint: {
+                                        'circle-radius': 6,
+                                        'circle-color': randomColor
+                                    }
+                                });
+                            } else if (geometryType === 'Polygon') {
+                                // For Polygon geometries
+                                map.addLayer({
+                                    id: `layer-${dataset}`,
+                                    type: 'fill',
+                                    source: `${dataset}`,
+                                    paint: {
+                                        'fill-color': randomColor,
+                                        'fill-opacity': 0.7,
+                                        'fill-outline-color': '#ffffff'
+                                    }
+                                });
+                            }
+
+                            // Get the bounds of the loaded data
+                            const bounds = new mapboxgl.LngLatBounds();
+                            data.features.forEach(feature => bounds.extend(feature.geometry.coordinates));
+
+                            // Fit the map to the bounds with some padding
+                            map.fitBounds(bounds, { padding: 50 });
                         })
                         .catch(error => console.error('Error fetching geospatial data:', error));
+                }
+            });
+
+            // Add click event listener to open popups
+            map.on('click', (e) => {
+                const features = map.queryRenderedFeatures(e.point);
+                
+                if (features.length > 0) {
+                    const feature = features[0];
+                    const coordinates = feature.geometry.coordinates.slice();
+                    const popupContent = generatePopupContent(feature.properties);
+
+                    // Create a popup at the clicked location
+                    new mapboxgl.Popup()
+                        .setLngLat(coordinates)
+                        .setHTML(popupContent)
+                        .addTo(map);
                 }
             });
         }
@@ -129,17 +239,20 @@
             return color;
         }
 
-        let legendContent = document.getElementById('legend-content');
+        // Function to generate HTML content for popup based on feature properties
+        function generatePopupContent(properties) {
+            let popupContent = '<div>';
 
-        function updateLegend(datasets) {
-            legendContent.innerHTML = '';
-            datasets.forEach(dataset => {
-                const color = getRandomColor();
-                const legendItem = document.createElement('div');
-                legendItem.innerHTML = `<span style="background-color: ${color}; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></span>${dataset}`;
-                legendContent.appendChild(legendItem);
-            });
+            for (const key in properties) {
+                if (properties.hasOwnProperty(key) && key !== 'geom' && key !== 'geojson') {
+                    popupContent += `<strong>${key}:</strong> ${properties[key]}<br>`;
+                }
+            }
+
+            popupContent += '</div>';
+            return popupContent;
         }
+
     </script>
 </body>
 </html>
