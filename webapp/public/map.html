@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; overflow: hidden; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; transition: margin-left 0.5s; }
+        #sidePanel { height: 100vh; width: 0; position: fixed; z-index: 1; overflow-x: hidden; transition: 0.5s; padding-top: 60px; background-color: #111; }
+        #sidePanel a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 25px; color: #818181; display: block; transition: 0.3s; }
+        #sidePanel a:hover { color: #f1f1f1; }
+        #openBtn { font-size: 20px; cursor: pointer; position: absolute; margin-left: 15px; margin-top: 10px; }
+        #datasets { position: absolute; top: 10px; left: 10px; z-index: 1; }
+        .dataset-option { margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="sidePanel">
+        <a href="#" onclick="toggleSidePanel()">☰ Close</a>
+        <label class="dataset-option">
+            <input type="checkbox" name="dataset" value="trees"> Trees
+        </label>
+        <label class="dataset-option">
+            <input type="checkbox" name="dataset" value="rivers"> Rivers
+        </label>
+        <label class="dataset-option">
+            <input type="checkbox" name="dataset" value="buildings"> Buildings
+        </label>
+    </div>
+    <div id="openBtn" onclick="toggleSidePanel()">☰ Open</div>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA';
+        
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-73.9918, 40.7359], // Set the center coordinates
+            zoom: 12 // Set the zoom level
+        });
+
+        let previousState = Array.from(document.querySelectorAll('input[name="dataset"]')).map(checkbox => checkbox.checked);
+
+        document.querySelectorAll('.dataset-option input').forEach((checkbox, index) => {
+            checkbox.addEventListener('change', () => {
+                const currentState = Array.from(document.querySelectorAll('input[name="dataset"]')).map(checkbox => checkbox.checked);
+
+                const unselectedDatasetIndex = currentState.findIndex((checked, i) => previousState[i] && !checked);
+                const unselectedDataset = unselectedDatasetIndex !== -1 ? document.querySelectorAll('input[name="dataset"]')[unselectedDatasetIndex].value : null;
+
+                console.log(`Unselected dataset: ${unselectedDataset}`);
+                if (unselectedDataset) {
+                    map.removeLayer(`points-${unselectedDataset}`);
+                    map.removeSource(`${unselectedDataset}`);
+                }
+
+                previousState = currentState;
+
+                const selectedDatasets = currentState
+                    .map((checked, i) => (checked ? document.querySelectorAll('input[name="dataset"]')[i].value : null))
+                    .filter(dataset => dataset !== null);
+
+                console.log(`Selected datasets: ${selectedDatasets}`);
+                console.log(`Triggering load / unload for => ${selectedDatasets}`);
+                loadDatasets(selectedDatasets);
+            });
+        });
+
+        function toggleSidePanel() {
+            const sidePanel = document.getElementById('sidePanel');
+            const map = document.getElementById('map');
+            const openBtn = document.getElementById('openBtn');
+
+            if (sidePanel.style.width === '250px') {
+                // Close side panel
+                sidePanel.style.width = '0';
+                map.style.marginLeft = '0';
+                openBtn.innerHTML = '☰ Open';
+            } else {
+                // Open side panel
+                sidePanel.style.width = '250px';
+                map.style.marginLeft = '250px';
+                openBtn.innerHTML = '☰ Close';
+            }
+        }
+
+        function loadDatasets(datasets) {
+            datasets.forEach(dataset => {
+                if (map.getSource(`${dataset}`)) {
+                    // Dataset is already loaded, remove the layer and source
+                    map.removeLayer(`points-${dataset}`);
+                    map.removeSource(`${dataset}`);
+                } else {
+                    // Fetch geospatial data from the server based on the selected dataset
+                    fetch(`/fetch/${dataset}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            // Add a GeoJSON source with the fetched data
+                            map.addSource(`${dataset}`, {
+                                type: 'geojson',
+                                data: data
+                            });
+
+                            // Add a layer to the map
+                            map.addLayer({
+                                id: `points-${dataset}`,
+                                type: 'circle',
+                                source: `${dataset}`,
+                                paint: {
+                                    'circle-radius': 4,
+                                    'circle-color': getRandomColor()
+                                }
+                            });
+                        })
+                        .catch(error => console.error('Error fetching geospatial data:', error));
+                }
+            });
+        }
+
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        let legendContent = document.getElementById('legend-content');
+
+        function updateLegend(datasets) {
+            legendContent.innerHTML = '';
+            datasets.forEach(dataset => {
+                const color = getRandomColor();
+                const legendItem = document.createElement('div');
+                legendItem.innerHTML = `<span style="background-color: ${color}; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></span>${dataset}`;
+                legendContent.appendChild(legendItem);
+            });
+        }
+    </script>
+</body>
+</html>
