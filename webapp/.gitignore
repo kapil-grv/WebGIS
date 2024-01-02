@@ -1,1 +1,4 @@
 node_modules/
+duckdb.db
+duckdb.db.wal
+package-lock.json
