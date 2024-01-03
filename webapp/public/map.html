@@ -5,20 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Map</title>
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
     <style>
         body { margin: 0; padding: 0; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; transition: margin-left 0.5s; }
-        #sidePanel { height: 100vh; width: 0; position: fixed; z-index: 1; overflow-x: hidden; transition: 0.5s; padding-top: 60px; background-color: #111; }
-        #sidePanel a { padding: 8px 8px 8px 32px; text-decoration: none; font-size: 25px; color: #818181; display: block; transition: 0.3s; }
+        #sidePanel { height: 100vh; width: 0; position: fixed; z-index: 1; overflow-x: hidden; transition: 0.5s; background-color: #c5c5c5; }
+        #sidePanel a { margin-left: 15px; margin-top: 10px; padding: 6px 6px; text-decoration: none; font-size: 20px; color: #818181; display: block; transition: 0.3s; }
         #sidePanel a:hover { color: #f1f1f1; }
-        #openBtn { font-size: 20px; cursor: pointer; position: absolute; margin-left: 15px; margin-top: 10px; }
+        #openBtn { font-size: 20px; cursor: pointer; position: absolute; margin-left: 15px; margin-top: 10px; background-color: #7c817c; color: white; padding: 6px 6px; border: none; border-radius: 5px; }
+
         #datasets { position: absolute; top: 10px; left: 10px; z-index: 1; }
         .dataset-option { margin-bottom: 5px; }
 
         #legend {position: absolute; bottom: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
         #legend-content div {display: inline-block; width: 20px; height: 20px; margin-right: 5px;}
 
+        .dataset-card {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        .dataset-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+            background-color: #ffffff; /* Set background color */
+            padding: 8px; /* Add padding for better appearance */
+            border-radius: 5px; /* Add border-radius for rounded corners */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Add a subtle box-shadow */
+            transition: background-color 0.3s; /* Smooth transition for background color */
+        }
+        .dataset-option:hover {
+            background-color: #f1f1f1; /* Change background color on hover */
+        }
+        .filter-button {
+            position: absolute;
+            margin-left: 10px;
+            right: 10px;
+            top: 10px;
+            margin-top: 10px;
+            transform: translateY(-50%);
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .filter-dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 2;
+            margin-top: 15px;
+            max-width: 300px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 40%;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+        }
+
     </style>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
 </head>
 <body>
     <div id="map"></div>
@@ -27,18 +112,29 @@
         <div id="legend-content"></div>
     </div>
     <div id="sidePanel">
-        <a href="#" onclick="toggleSidePanel()">☰ Close</a>
-        <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="asset"> Asset
-        </label>
-        <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="nursery"> Nursery
-        </label>
-        <label class="dataset-option">
-            <input type="checkbox" name="dataset" value="plantation"> Plantation
-        </label>
+        <a href="#" onclick="toggleSidePanel()">☰</a>
+        <div class="dataset-card">
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="asset"> Asset
+                <button class="filter-button" id="filterDialogasset">Filter</button>
+            </label>
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="nursery"> Nursery
+                <button class="filter-button" id="filterDialognursery">Filter</button>
+            </label>
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="plantation"> Plantation
+                <button class="filter-button" id="filterDialogplantation">Filter</button>
+            </label>
+        </div>
     </div>
-    <div id="openBtn" onclick="toggleSidePanel()">☰ Open</div>
+    <div id="openBtn" onclick="toggleSidePanel()">☰</div>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+        </div>
+    </div>
+    
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA';
@@ -46,7 +142,7 @@
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
-            center: [-74.5, 40], // Set the center coordinates
+            center: [78, 22], // Set the center coordinates
             zoom: 3 // Set the zoom level
         });
 
@@ -132,16 +228,16 @@
             const map = document.getElementById('map');
             const openBtn = document.getElementById('openBtn');
 
-            if (sidePanel.style.width === '250px') {
+            if (sidePanel.style.width === '20%') {
                 // Close side panel
                 sidePanel.style.width = '0';
                 map.style.marginLeft = '0';
-                openBtn.innerHTML = '☰ Open';
+                openBtn.innerHTML = '☰';
             } else {
                 // Open side panel
-                sidePanel.style.width = '250px';
-                map.style.marginLeft = '250px';
-                openBtn.innerHTML = '☰ Close';
+                sidePanel.style.width = '20%';
+                map.style.marginLeft = '20%';
+                openBtn.innerHTML = '☰';
             }
         }
 
@@ -166,6 +262,17 @@
                     fetch(`/fetch/${dataset}`)
                         .then(response => response.json())
                         .then(data => {
+
+                            // Add event listener for filter dialog
+                            document.getElementById(`filterDialog${dataset}`).addEventListener('click', function () {
+                                // Extract field names from the 'properties' object of the first feature
+                                const properties = data.features[0].properties;
+                                const fields = Object.keys(properties);
+
+                                // Build and display the filter modal with dropdowns
+                                buildFilterModal(dataset, fields);
+                            });
+
                             // Add a GeoJSON source with the fetched data
                             map.addSource(`${dataset}`, {
                                 type: 'geojson',
@@ -203,10 +310,22 @@
 
                             // Get the bounds of the loaded data
                             const bounds = new mapboxgl.LngLatBounds();
-                            data.features.forEach(feature => bounds.extend(feature.geometry.coordinates));
+                            data.features.forEach(feature => {
+                                const geometry = feature.geometry;
+                                if (geometry.type === 'Point') {
+                                    bounds.extend(geometry.coordinates);
+                                } else if (geometry.type === 'Polygon') {
+                                    geometry.coordinates.forEach(polygon => {
+                                        polygon.forEach(coordinate => {
+                                            bounds.extend(coordinate);
+                                        });
+                                    });
+                                }
+                            });
 
                             // Fit the map to the bounds with some padding
-                            map.fitBounds(bounds, { padding: 50 });
+                            // Check if there are features before calling fitBounds
+                            fitMapToBounds(map, bounds);
                         })
                         .catch(error => console.error('Error fetching geospatial data:', error));
                 }
@@ -233,11 +352,16 @@
         function getRandomColor() {
             const letters = '0123456789ABCDEF';
             let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
+            
+            // Generate dark shades for each color component
+            for (let i = 0; i < 3; i++) {
+                const darkComponent = Math.floor(Math.random() * 128).toString(16);
+                color += darkComponent.length === 1 ? '0' + darkComponent : darkComponent;
             }
+
             return color;
         }
+
 
         // Function to generate HTML content for popup based on feature properties
         function generatePopupContent(properties) {
@@ -253,6 +377,208 @@
             return popupContent;
         }
 
+        document.querySelector('.close').addEventListener('click', function() {
+            $('#myModal').modal('hide');
+        });
+
+
+        window.addEventListener('click', function(event) {
+            if (event.target === document.getElementById('myModal')) {
+                $('#myModal').modal('hide');
+            }
+        });
+
+        function buildFilterModal(dataset, fields) {
+            console.log(`building filteration div`);
+
+            const modal = document.getElementById('myModal');
+            modal.innerHTML = ''; // Clear existing content in the modal
+            let selectedField;
+
+            // Create a card-like feature
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.top = 'inherit';
+            card.style.margin = '10%';
+            card.style.left = '20%';
+            card.style.width = '40%';
+
+            // Add a heading to the card
+            const cardHeader = document.createElement('div');
+            cardHeader.className = 'card-header';
+            // cardHeader.textContent = 'Filter';
+            cardHeader.innerHTML = 'Filter<span class="close" onclick="closeFilterModal()">&times;</span>';
+            card.appendChild(cardHeader);
+
+            // Function to close the modal
+            window.closeFilterModal = function () {
+                $('#myModal').modal('hide');
+            };
+
+            // Remove specific values from the fields array
+            const valuesToRemove = ['geom', 'latitude', 'longitude', 'geojson', 'WKT']; // Add the values you want to remove
+            fields = fields.filter(field => !valuesToRemove.includes(field));
+
+            // Update the fields array with a default "Select" option
+            fields.unshift('Select Field');
+
+            // Create and append the first dropdown for field names
+            const fieldDropdown = createDropdown('fieldDropdown', fields);
+            card.appendChild(fieldDropdown);
+
+            // Create and append the second dropdown for values
+            const valueDropdown = createDropdown('valueDropdown');
+            card.appendChild(valueDropdown);
+
+            // Append the card to the modal body
+            modal.appendChild(card);
+
+            // Show the modal using Bootstrap JavaScript
+            $('#myModal').modal('show');
+
+            // Add an event listener to the fieldDropdown to populate the valueDropdown
+            fieldDropdown.addEventListener('change', function () {
+                selectedField = fieldDropdown.value;
+                // Fetch dataset values for the selected field from the server
+                fetch(`/aggregation/${dataset}/${selectedField}`)
+                    .then(response => response.json())
+                    .then(values => {
+                        populateValueDropdown(values);
+                    })
+                    .catch(error => console.error('Error fetching dataset values:', error));
+            });
+
+            // Add an event listener to the valueDropdown to close the modal on selection
+            valueDropdown.addEventListener('change', function () {
+                const selectedValue = valueDropdown.value;
+
+                // Fetch data based on the selected value from the server
+                fetch(`/filter/${dataset}/${selectedField}/${selectedValue}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        // Remove the existing layer with markers
+                        map.removeLayer(`layer-${dataset}`);
+                        map.removeSource(`${dataset}`);
+
+                        // Add a new GeoJSON source with the fetched data
+                        map.addSource(`${dataset}`, {
+                            type: 'geojson',
+                            data: data
+                        });
+
+                        // Determine the geometry type (Point or Polygon)
+                        const geometryType = data.features[0].geometry.type;
+
+                        // Add a new layer to the map based on the geometry type
+                        if (geometryType === 'Point') {
+                            // For Point geometries
+                            map.addLayer({
+                                id: `layer-${dataset}`,
+                                type: 'circle',
+                                source: `${dataset}`,
+                                paint: {
+                                    'circle-radius': 6,
+                                    'circle-color': getRandomColor()
+                                }
+                            });
+                        } else if (geometryType === 'Polygon') {
+                            // For Polygon geometries
+                            map.addLayer({
+                                id: `layer-${dataset}`,
+                                type: 'fill',
+                                source: `${dataset}`,
+                                paint: {
+                                    'fill-color': getRandomColor(),
+                                    'fill-opacity': 0.7,
+                                    'fill-outline-color': '#ffffff'
+                                }
+                            });
+                        }
+
+                        // Get the bounds of the loaded data
+                        const bounds = new mapboxgl.LngLatBounds();
+                        data.features.forEach(feature => {
+                            const geometry = feature.geometry;
+                            if (geometry.type === 'Point') {
+                                bounds.extend(geometry.coordinates);
+                            } else if (geometry.type === 'Polygon') {
+                                geometry.coordinates.forEach(polygon => {
+                                    polygon.forEach(coordinate => {
+                                        bounds.extend(coordinate);
+                                    });
+                                });
+                            }
+                        });
+
+                        // Fit the map to the bounds with some padding
+                        // Check if there are features before calling fitBounds
+                        fitMapToBounds(map, bounds);
+
+                        // Close the modal upon selecting a value
+                        $('#myModal').modal('hide');
+                        toggleSidePanel();
+                    })
+                    .catch(error => console.error('Error fetching geospatial data:', error));
+            });
+
+            // Function to create a dropdown
+            function createDropdown(id, options = []) {
+                const dropdown = document.createElement('select');
+                dropdown.id = id;
+                dropdown.className = 'form-control'; // Bootstrap class for styling
+
+                options.forEach(optionText => {
+                    const option = document.createElement('option');
+                    option.value = optionText;
+                    option.text = optionText;
+                    dropdown.appendChild(option);
+                });
+
+                return dropdown;
+            }
+        }
+
+
+        // Function to populate the valueDropdown with a default "Select" option
+        function populateValueDropdown(values) {
+            const valueDropdown = document.getElementById('valueDropdown');
+            
+            // Clear existing options
+            valueDropdown.innerHTML = '';
+
+            // Create and append a default "Select" option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = ''; // Set an empty value for the default option
+            defaultOption.text = 'Select';
+            valueDropdown.appendChild(defaultOption);
+            
+            // Create and append options for each value
+            values.forEach(value => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.text = value;
+                valueDropdown.appendChild(option);
+            });
+        }
+
+        function fitMapToBounds(map, bounds) {
+            // Check if the bounds are valid
+            if (
+                isFinite(bounds.getSouthWest().lng) &&
+                isFinite(bounds.getSouthWest().lat) &&
+                isFinite(bounds.getNorthEast().lng) &&
+                isFinite(bounds.getNorthEast().lat)
+            ) {
+                // Fit the map to the bounds with some padding
+                map.fitBounds(bounds, { padding: 100 });
+            } else {
+                // Handle the case where bounds are not valid (e.g., no features)
+                console.error('Invalid bounds');
+            }
+        }
+
+
     </script>
+    
 </body>
 </html>

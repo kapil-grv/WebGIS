@@ -174,7 +174,7 @@ app.get('/fetch/:filename', (req, res) => {
     const requestedFilename = req.params.filename;
 
     // Fetch all geospatial data from the DuckDB table
-    con.all(`SELECT *, ST_AsGeoJSON(geom) AS geojson FROM ${requestedFilename}`, (err, result) => {
+    con.all(`SELECT *, ST_AsGeoJSON(geom) AS geojson FROM ${requestedFilename}`, (err, results) => {
         if (err) {
             console.error('Error fetching data:', err);
             return res.status(500).json({ error: 'Internal Server Error' });
@@ -183,7 +183,7 @@ app.get('/fetch/:filename', (req, res) => {
         // Transform result to GeoJSON format
         const geojson = {
             type: 'FeatureCollection',
-            features: result.map(row => ({
+            features: results.map(row => ({
                 type: 'Feature',
                 geometry: JSON.parse(row.geojson),
                 properties: { ...row }
@@ -194,8 +194,59 @@ app.get('/fetch/:filename', (req, res) => {
     });
 });
 
+// Define the route to filter data based on field value
+app.get('/filter/:tableName/:field/:fieldValue', (req, res) => {
+    const { tableName, field, fieldValue } = req.params;
+
+    // Perform the filter query
+    const query = `SELECT *, ST_AsGeoJSON(geom) AS geojson FROM ${tableName} WHERE ${field} = '${fieldValue}'`;
+
+    con.all(query, (err, results) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+            return;
+        }
+
+        // Transform result to GeoJSON format
+        const geojson = {
+            type: 'FeatureCollection',
+            features: results.map(row => ({
+                type: 'Feature',
+                geometry: JSON.parse(row.geojson),
+                properties: { ...row }
+            }))
+        };
+
+        // Send the filtered results as JSON
+        res.status(200).json(geojson);
+    });
+});
+
+// Define the route to get all values (aggregation) of a specific field throughout the table
+app.get('/aggregation/:tableName/:field', (req, res) => {
+    const { tableName, field } = req.params;
+
+    // Perform the aggregation query
+    const query = `SELECT ${field}, COUNT(*) AS count FROM ${tableName} GROUP BY ${field}`;
+
+    con.all(query, (err, result) => {
+        if (err) {
+            console.error('Error executing query:', err);
+            res.status(500).json({ error: 'Internal Server Error' });
+            return;
+        }
+
+        // Transform result to GeoJSON format
+        let response = result.map(row => row[`${field}`]);
+
+        // Send the filtered results as JSON
+        res.status(200).json(response);
+    });
+});
+
+
 // Route to serve the HTML page with the Mapbox map
-// Route to open the HTML page with the Mapbox map
 app.get('/map', (req, res) => {
     // Read the content of map.html
     const mapHtmlContent = fs.readFileSync(path.join(__dirname, 'public', 'map.html'), 'utf8');
