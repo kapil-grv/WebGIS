@@ -123,6 +123,9 @@ legend.onAdd = function (map) {
         conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Dead/Dying', 'Unknown'],
         labels = [];
 
+    // Add a heading to the legend
+    div.innerHTML = '<h4>Health Condition</h4>';
+
     for (var i = 0; i < conditions.length; i++) {
         div.innerHTML +=
             '<i style="background:' + getFillColor(conditions[i]) + '"></i> ' + conditions[i] + '<br>';
