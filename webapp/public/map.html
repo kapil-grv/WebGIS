@@ -17,15 +17,22 @@
         #datasets { position: absolute; top: 10px; left: 10px; z-index: 1; }
         .dataset-option { margin-bottom: 5px; }
 
-        #legend {position: absolute; bottom: 10px; right: 10px; background-color: white; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
+        #legend {position: absolute; top: 240%; bottom: 1px; right: 1px; background-color: white; padding: 100px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
         #legend-content div {display: inline-block; width: 20px; height: 20px; margin-right: 5px;}
 
+        .filter-button:hover {
+            background-color: #2980b9;
+        }
+        .dataset-name {
+            margin-left: 10px;
+            font-weight: bold;
+        }
         .dataset-card {
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 10px;
-            margin-bottom: 15px;
+            margin: 10px;
         }
         .dataset-option {
             display: flex;
@@ -108,26 +115,30 @@
 <body>
     <div id="map"></div>
     <div id="legend" class="mapboxgl-ctrl">
-        <h4>Legend</h4>
+        <h5>Legend</h5>
         <div id="legend-content"></div>
     </div>
     <div id="sidePanel">
         <a href="#" onclick="toggleSidePanel()">☰</a>
         <div class="dataset-card">
             <label class="dataset-option">
-                <input type="checkbox" name="dataset" value="asset"> Asset
+                <input type="checkbox" name="dataset" value="asset">
+                <span class="dataset-name">Asset</span>
                 <button class="filter-button" id="filterDialogasset">Filter</button>
             </label>
             <label class="dataset-option">
-                <input type="checkbox" name="dataset" value="nursery"> Nursery
+                <input type="checkbox" name="dataset" value="nursery">
+                <span class="dataset-name">Nursery</span>
                 <button class="filter-button" id="filterDialognursery">Filter</button>
             </label>
             <label class="dataset-option">
-                <input type="checkbox" name="dataset" value="plantation"> Plantation
+                <input type="checkbox" name="dataset" value="plantation">
+                <span class="dataset-name">Plantation</span>
                 <button class="filter-button" id="filterDialogplantation">Filter</button>
             </label>
         </div>
     </div>
+    
     <div id="openBtn" onclick="toggleSidePanel()">☰</div>
     <div id="myModal" class="modal">
         <div class="modal-content">
@@ -148,8 +159,12 @@
 
         // Initialize legend when the map is loaded
         map.on('load', () => {
+            // Add zoom control
+            const zoomControl = new mapboxgl.NavigationControl();
+            map.addControl(zoomControl, 'top-right');
+            
             // Create a custom control for the legend
-            const legendControl = new mapboxgl.NavigationControl({ showCompass: true });
+            const legendControl = new mapboxgl.NavigationControl();
             legendControl.onAdd = function () {
                 const legendDiv = document.getElementById('legend');
                 return legendDiv;
@@ -334,11 +349,26 @@
             // Add click event listener to open popups
             map.on('click', (e) => {
                 const features = map.queryRenderedFeatures(e.point);
-                
+
                 if (features.length > 0) {
                     const feature = features[0];
-                    const coordinates = feature.geometry.coordinates.slice();
-                    const popupContent = generatePopupContent(feature.properties);
+                    const geometryType = feature.geometry.type;
+                    let coordinates;
+
+                    if (geometryType === 'Point') {
+                        coordinates = feature.geometry.coordinates.slice();
+                    } else if (geometryType === 'Polygon') {
+                        // Calculate the centroid of the polygon
+                        const polygonCoordinates = feature.geometry.coordinates[0]; // Assuming the first set of coordinates is the exterior ring
+                        const centroid = calculatePolygonCentroid(polygonCoordinates);
+                        coordinates = centroid;
+                    }
+
+                    // Remove unwanted properties from feature.properties
+                    delete feature.properties['WKT'];  // Remove 'wkt' property
+                    delete feature.properties['latitude'];  // Remove 'latitude' property
+                    delete feature.properties['longitude'];  // Remove 'longitude' property
+                    const popupContent = generatePopupContent(feature.properties, geometryType);
 
                     // Create a popup at the clicked location
                     new mapboxgl.Popup()
@@ -347,6 +377,21 @@
                         .addTo(map);
                 }
             });
+
+            // Function to calculate the centroid of a polygon
+            function calculatePolygonCentroid(polygonCoordinates) {
+                const totalPoints = polygonCoordinates.length;
+                let x = 0;
+                let y = 0;
+
+                polygonCoordinates.forEach(coord => {
+                    x += coord[0];
+                    y += coord[1];
+                });
+
+                return [x / totalPoints, y / totalPoints];
+            }
+
         }
 
         function getRandomColor() {
