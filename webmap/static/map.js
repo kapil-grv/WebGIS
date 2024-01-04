@@ -123,6 +123,9 @@ legend.onAdd = function (map) {
         conditions = ['Excellent', 'Good', 'Fair', 'Poor', 'Dead/Dying', 'Unknown'],
         labels = [];
 
+    // Add a heading to the legend - v4
+    div.innerHTML = '<h4>Health Condition</h4>';
+
     for (var i = 0; i < conditions.length; i++) {
         div.innerHTML +=
             '<i style="background:' + getFillColor(conditions[i]) + '"></i> ' + conditions[i] + '<br>';
@@ -274,10 +277,10 @@ function populateSpeciesFilterDropdown(data) {
     var speciesArray = Array.from(speciesSet);
     speciesArray.sort();
 
-    var defaultOption = document.createElement('option');
-    defaultOption.value = 'All Species';
-    defaultOption.text = 'All Species';
-    speciesFilterDropdown.appendChild(defaultOption);
+    // var defaultOption = document.createElement('option');
+    // defaultOption.value = 'All Species';
+    // defaultOption.text = 'All Species';
+    // speciesFilterDropdown.appendChild(defaultOption);
 
     speciesArray.forEach(function (species) {
         var option = document.createElement('option');
