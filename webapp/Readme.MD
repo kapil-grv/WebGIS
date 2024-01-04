@@ -83,3 +83,8 @@ curl http://localhost:3000/aggregation/yourtable/yourfield
 # Important Notes
 * Ensure that the Mapbox access token is properly configured in public/app.js.
 * Avoid loading duplicate layers with the same filename. Rename files or load different data.
+
+# TODO
+
+* Symbols based on the filters / data type
+* Suggestions in case of large scale data - clustering
