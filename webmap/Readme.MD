@@ -46,3 +46,7 @@ The map allows users to draw circles to filter markers within a specified radius
 
 * Legend:
 A legend is provided to interpret the colors representing different conditions of the trees.
+
+# Scribe documentation
+
+Link - `https://scribehow.com/shared/Upload_visualize_and_filter_by_species__circle_in_a_Map__b9gGCEdLTsusF_L13j1knQ`
