@@ -33,6 +33,8 @@ con.exec('LOAD spatial;', (err, result) => {
 
 // Serve static files (HTML, JS, CSS, etc.) from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from the "static" directory
+app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use(bodyParser.json());
 
 // Function to create table based on CSV headers
@@ -258,6 +260,15 @@ app.get('/map', (req, res) => {
 // Handle the request for favicon.ico
 app.get('/favicon.ico', (req, res) => {
     res.status(204).end();
+});
+
+// Define a route to serve the image
+app.get('/image/:imageName', (req, res) => {
+    const imageName = req.params.imageName;
+    const imagePath = path.join(__dirname, 'static', imageName);
+  
+    // Send the image in the response
+    res.sendFile(imagePath);
 });
 
 // Start the server

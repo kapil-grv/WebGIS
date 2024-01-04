@@ -17,8 +17,24 @@
         #datasets { position: absolute; top: 10px; left: 10px; z-index: 1; }
         .dataset-option { margin-bottom: 5px; }
 
-        #legend {position: absolute; top: 240%; bottom: 1px; right: 1px; background-color: white; padding: 100px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);}
-        #legend-content div {display: inline-block; width: 20px; height: 20px; margin-right: 5px;}
+        #legend {
+            position: fixed;
+            display: none;
+            bottom: 30px;
+            right: 10px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #legend-content div {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
 
         .filter-button:hover {
             background-color: #2980b9;
@@ -60,7 +76,7 @@
             border: none;
             padding: 5px 10px;
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 10px;
         }
         .filter-dialog {
             display: none;
@@ -105,6 +121,24 @@
             color: black;
         }
 
+        /* Add this style for the legend items */
+        .legend-item {
+            display: inline-block;
+            width: 20px; /* Adjust as needed */
+            height: 20px; /* Adjust as needed */
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        /* Add this style for the legend text */
+        .legend-text {
+            font-weight: bold;
+            vertical-align: middle;
+            font-size: 16px; /* Adjust the font size as needed */
+            color: #333; /* Adjust the text color as needed */
+        }
+
+
     </style>
 
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
@@ -115,7 +149,7 @@
 <body>
     <div id="map"></div>
     <div id="legend" class="mapboxgl-ctrl">
-        <h5>Legend</h5>
+        <h5>Legend</h5><br>
         <div id="legend-content"></div>
     </div>
     <div id="sidePanel">
@@ -124,17 +158,17 @@
             <label class="dataset-option">
                 <input type="checkbox" name="dataset" value="asset">
                 <span class="dataset-name">Asset</span>
-                <button class="filter-button" id="filterDialogasset">Filter</button>
+                <button class="filter-button" id="filterDialogasset" title="Load data before hitting Filter">Filter</button>
             </label>
             <label class="dataset-option">
                 <input type="checkbox" name="dataset" value="nursery">
                 <span class="dataset-name">Nursery</span>
-                <button class="filter-button" id="filterDialognursery">Filter</button>
+                <button class="filter-button" id="filterDialognursery" title="Load data before hitting Filter">Filter</button>
             </label>
             <label class="dataset-option">
                 <input type="checkbox" name="dataset" value="plantation">
                 <span class="dataset-name">Plantation</span>
-                <button class="filter-button" id="filterDialogplantation">Filter</button>
+                <button class="filter-button" id="filterDialogplantation" title="Load data before hitting Filter">Filter</button>
             </label>
         </div>
     </div>
@@ -149,7 +183,9 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA';
-        
+        let activeLayers = [];
+        let firstPointLayerId;
+
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
@@ -210,6 +246,20 @@
                 // Unload the unselected dataset from the map
                 map.removeLayer(`layer-${unselectedDataset}`);
                 map.removeSource(`${unselectedDataset}`);
+
+                // Remove inactive layers
+                console.log(`removing layer from activeLayers => ${unselectedDataset}`);
+                const index = activeLayers.findIndex(layer => Object.keys(layer)[0] === unselectedDataset);
+                console.log(`index => ${index}`);
+
+                if (index !== -1) {
+                    // Layer is active, remove it
+                    console.log(`activeLayers before removal => ${JSON.stringify(activeLayers)}`);
+                    activeLayers.splice(index, 1);
+                    console.log(`activeLayers after removal => ${JSON.stringify(activeLayers)}`);
+                }
+
+                updateLegend();
             }
 
             // Update previous state
@@ -256,10 +306,39 @@
             }
         }
 
-        // Function to update the legend
-        function updateLegend(color) {
-            legendContent = `<div style="background-color: ${color};"></div> Layer Color`;
+        // Function to update the legend based on the active layers
+        function updateLegend() {
+
+            document.getElementById('legend').style.display = "block";
+            
+            const legendContent = activeLayers.map(layer => {
+                const layerName = Object.keys(layer)[0];
+                const layerColor = layer[layerName];
+                return `<div class="legend-item" style="background-color: ${layerColor};"></div><span class="legend-text">${toTitleCase(layerName)}</span>`;
+            }).join('<br><br>');
+
             document.getElementById('legend-content').innerHTML = legendContent;
+        }
+
+
+        // Function to toggle layers on and off
+        function toggleLayer(layerName, layerColor) {
+
+            console.log(`Toggle layer init for => ${layerName} : ${layerColor}`);
+
+            const index = activeLayers.findIndex(layer => Object.keys(layer)[0] === layer[layerName]);
+
+            if (index !== -1) {
+                // Layer is active, remove it
+                activeLayers.splice(index, 1);
+            } else {
+                // Layer is inactive, add it with the provided color
+                const newLayer = { [layerName]: layerColor };
+                activeLayers.push(newLayer);
+            }
+
+            // Update the legend based on the current active layers
+            updateLegend();
         }
 
         function loadDatasets(datasets) {
@@ -271,7 +350,7 @@
                 } else {
 
                     let randomColor = getRandomColor();
-                    updateLegend(randomColor);
+                    toggleLayer(dataset, randomColor);
 
                     // Fetch geospatial data from the server based on the selected dataset
                     fetch(`/fetch/${dataset}`)
@@ -305,12 +384,18 @@
                                     type: 'circle',
                                     source: `${dataset}`,
                                     paint: {
-                                        'circle-radius': 6,
+                                        'circle-radius': 8,
                                         'circle-color': randomColor
                                     }
                                 });
+
+                                if(!firstPointLayerId) {
+                                    firstPointLayerId = `layer-${dataset}`;
+                                    console.log(`firstPointLayerId => ${firstPointLayerId}`);
+                                }
                             } else if (geometryType === 'Polygon') {
                                 // For Polygon geometries
+
                                 map.addLayer({
                                     id: `layer-${dataset}`,
                                     type: 'fill',
@@ -321,6 +406,11 @@
                                         'fill-outline-color': '#ffffff'
                                     }
                                 });
+
+                                if (firstPointLayerId !== undefined) {
+                                    console.log(`firstPointLayerId => ${firstPointLayerId} | layer-${dataset}`);
+                                    map.moveLayer(`layer-${dataset}`, firstPointLayerId);
+                                }
                             }
 
                             // Get the bounds of the loaded data
@@ -352,12 +442,13 @@
 
                 if (features.length > 0) {
                     const feature = features[0];
+                    console.log(`feature => ${JSON.stringify(feature)}`);
                     const geometryType = feature.geometry.type;
                     let coordinates;
 
                     if (geometryType === 'Point') {
                         coordinates = feature.geometry.coordinates.slice();
-                    } else if (geometryType === 'Polygon') {
+                    } else if (geometryType === 'Polygon' || geometryType === 'MultiPolygon') {
                         // Calculate the centroid of the polygon
                         const polygonCoordinates = feature.geometry.coordinates[0]; // Assuming the first set of coordinates is the exterior ring
                         const centroid = calculatePolygonCentroid(polygonCoordinates);
@@ -371,10 +462,13 @@
                     const popupContent = generatePopupContent(feature.properties, geometryType);
 
                     // Create a popup at the clicked location
-                    new mapboxgl.Popup()
-                        .setLngLat(coordinates)
-                        .setHTML(popupContent)
-                        .addTo(map);
+                    console.log(`coordinates => ${coordinates}`);
+                    if (!isNaN(coordinates[0]) && !isNaN(coordinates[1])) {
+                        new mapboxgl.Popup({ closeButton: false })
+                            .setLngLat(coordinates)
+                            .setHTML(popupContent)
+                            .addTo(map);
+                    }
                 }
             });
 
@@ -622,7 +716,11 @@
             }
         }
 
-
+        function toTitleCase(str) {
+            return str.replace(/\w\S*/g, function (txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
     </script>
     
 </body>
