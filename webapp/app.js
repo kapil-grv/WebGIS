@@ -257,6 +257,21 @@ app.get('/map', (req, res) => {
     res.send(mapHtmlContent);
 });
 
+app.get('/script.js', (req, res) => {
+    // Read the content of script.js
+    const scriptContent = fs.readFileSync(path.join(__dirname, 'public', 'app.js'), 'utf8');
+
+    // Send the JS content
+    res.send(scriptContent);
+});
+app.get('/style.css', (req, res) => {
+    // Read the content of style.css
+    const styleContent = fs.readFileSync(path.join(__dirname, 'public', 'style.css'), 'utf8');
+
+    // Send the CSS content
+    res.send(styleContent);
+});
+
 // Handle the request for favicon.ico
 app.get('/favicon.ico', (req, res) => {
     res.status(204).end();
