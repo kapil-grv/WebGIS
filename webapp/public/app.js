@@ -124,18 +124,27 @@ function toggleSidePanel() {
 
 // Function to update the legend based on the active layers
 function updateLegend() {
-
     document.getElementById('legend').style.display = "block";
 
-    const legendContent = activeLayers.map(layer => {
+    // Create a Map to store layer names and their corresponding colors
+    const legendMap = new Map();
+
+    // Build the legend map
+    activeLayers.forEach(layer => {
         const layerName = Object.keys(layer)[0];
         const layerColor = layer[layerName];
-        return `<div class="legend-item" style="background-color: ${layerColor};"></div><span class="legend-text">${toTitleCase(layerName)}</span>`;
-    }).join('<br><br>');
+        legendMap.set(layerName, layerColor);
+    });
+
+    // Build the legend content based on the legend map
+    const legendContent = Array.from(legendMap.entries())
+        .map(([layerName, layerColor]) => {
+            return `<div class="legend-item" style="background-color: ${layerColor};"></div><span class="legend-text">${toTitleCase(layerName)}</span>`;
+        })
+        .join('<br><br>');
 
     document.getElementById('legend-content').innerHTML = legendContent;
 }
-
 
 // Function to toggle layers on and off
 function toggleLayer(layerName, layerColor) {
@@ -201,7 +210,9 @@ function loadDatasets(datasets) {
                             source: `${dataset}`,
                             paint: {
                                 'circle-radius': 8,
-                                'circle-color': randomColor
+                                'circle-color': randomColor,
+                                "circle-stroke-width": 2, // Adjust the thickness of the circle border
+                                "circle-stroke-color": "#ffffff" // Replace with your desired border color
                             }
                         });
 
@@ -305,18 +316,24 @@ function loadDatasets(datasets) {
 }
 
 function getRandomColor() {
-    const letters = '0123456789ABCDEF';
-    let color = '#';
-    
-    // Generate dark shades for each color component
-    for (let i = 0; i < 3; i++) {
-        const darkComponent = Math.floor(Math.random() * 128).toString(16);
-        color += darkComponent.length === 1 ? '0' + darkComponent : darkComponent;
+    const availableColors = [
+        '#1f78b4', '#33a02c', '#e31a1c', '#ff7f00', '#6a3d9a',
+        '#a6cee3', '#b2df8a', '#fb9a99', '#fdbf6f', '#cab2d6',
+        '#01665e', '#d73027', '#4575b4', '#91bfdb', '#313695',
+        '#fee08b', '#d73027', '#4575b4', '#91bfdb', '#313695'
+    ];
+
+    if (availableColors.length === 0) {
+        console.warn('No available colors remaining. Returning fallback color.');
+        return '#999999'; // Fallback color when all colors are used
     }
+
+    // Randomly select and remove a color from the list
+    const randomIndex = Math.floor(Math.random() * availableColors.length);
+    const color = availableColors.splice(randomIndex, 1)[0];
 
     return color;
 }
-
 
 // Function to generate HTML content for popup based on feature properties
 function generatePopupContent(properties) {
@@ -407,6 +424,9 @@ function buildFilterModal(dataset, fields) {
     valueDropdown.addEventListener('change', function () {
         const selectedValue = valueDropdown.value;
 
+        let randomColor = getRandomColor();
+        toggleLayer(dataset, randomColor);
+
         // Fetch data based on the selected value from the server
         fetch(`/filter/${dataset}/${selectedField}/${selectedValue}`)
             .then(response => response.json())
@@ -433,9 +453,16 @@ function buildFilterModal(dataset, fields) {
                         source: `${dataset}`,
                         paint: {
                             'circle-radius': 8,
-                            'circle-color': getRandomColor()
+                            'circle-color': randomColor,
+                            "circle-stroke-width": 2, // Adjust the thickness of the circle border
+                            "circle-stroke-color": "#ffffff" // Replace with your desired border color
                         }
                     });
+
+                    if(!firstPointLayerId) {
+                        firstPointLayerId = `layer-${dataset}`;
+                        console.log(`firstPointLayerId => ${firstPointLayerId}`);
+                    }
                 } else if (geometryType === 'Polygon') {
                     // For Polygon geometries
                     map.addLayer({
@@ -443,11 +470,16 @@ function buildFilterModal(dataset, fields) {
                         type: 'fill',
                         source: `${dataset}`,
                         paint: {
-                            'fill-color': getRandomColor(),
+                            'fill-color': randomColor,
                             'fill-opacity': 0.7,
                             'fill-outline-color': '#ffffff'
                         }
                     });
+
+                    if (firstPointLayerId !== undefined) {
+                        console.log(`firstPointLayerId => ${firstPointLayerId} | layer-${dataset}`);
+                        map.moveLayer(`layer-${dataset}`, firstPointLayerId);
+                    }
                 }
 
                 // Get the bounds of the loaded data
