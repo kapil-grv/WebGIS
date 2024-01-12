@@ -36,3 +36,36 @@
     transform: rotate(360deg);
   }
 }
+
+
+/* New */
+
+/* Add this to your CSS or style tag */
+.file-upload-btn-wrapper {
+  position: relative;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.file-upload-btn-wrapper .btn {
+  border: 2px solid gray;
+  color: gray;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 20px;
+  margin-right: 20px;
+}
+
+.file-upload-btn-wrapper input[type=file] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+
+.file-upload-btn-wrapper:hover .btn {
+  border-color: #2196F3;
+  color: #2196F3;
+}

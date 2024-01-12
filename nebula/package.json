@@ -15,7 +15,11 @@
     "react-map-gl": "^7.1.7",
     "react-scripts": "5.0.1",
     "turf": "^3.0.14",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "@babel/plugin-proposal-private-property-in-object": "7.21.11"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "7.21.11"
   },
   "scripts": {
     "start": "react-scripts start",

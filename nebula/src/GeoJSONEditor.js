@@ -1,90 +1,87 @@
 // GeoJSONEditor.js
 import React, { useState } from 'react';
 import DeckGL from '@deck.gl/react';
-import { EditableGeoJsonLayer, ModifyMode } from 'nebula.gl';
+import { EditableGeoJsonLayer, ModifyMode, ViewMode } from 'nebula.gl';
 import { Map } from 'react-map-gl';
 
-const myFeatureCollection = {
-  type: 'FeatureCollection',
-  features: [
-    {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [78, 12],
-              [78.5, 12.5],
-              [79, 12],
-              [78.75, 11.75],
-              [78, 12]
-            ]
-          ]
-        },
-        properties: {
-          name: 'Sample Polygon',
-          description: 'This is a sample polygon feature.'
-        }
-    }
-  ]
-};
-
 const GeoJSONEditor = () => {
+  const [editableFeatureCollection, setEditableFeatureCollection] = useState(null);
+  const [readOnlyFeatureCollections, setReadOnlyFeatureCollections] = useState([]);
+  const [selectedFeatureIndex, setSelectedFeatureIndex] = useState(0);
 
-    const [featureCollection, setFetureCollection] = useState(myFeatureCollection)
-    const [selectedFeIndex, setSelectedFeIndex] = useState(0)
-    const selectedFeatureIndexes = [selectedFeIndex]
-
-    const onFileChange = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const geojson = JSON.parse(e.target.result);
-            setFetureCollection(geojson);
-          };
-          reader.readAsText(file);
+  const onFileChange = (event, mode) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const geojson = JSON.parse(e.target.result);
+        if (mode === 'editable') {
+          setEditableFeatureCollection(geojson);
+          setSelectedFeatureIndex(0);
+        } else {
+          setReadOnlyFeatureCollections((prevCollections) => [...prevCollections, geojson]);
         }
-    };
+      };
+      reader.readAsText(file);
+    }
+  };
 
-    const layer = new EditableGeoJsonLayer({
-        data: featureCollection,
-        mode: ModifyMode,
-        pickable: true,
-        selectedFeatureIndexes: selectedFeatureIndexes,
-        autoHighlight: true,
-        onClick: (info, event) => {
-            setSelectedFeIndex(info.index)
-        },
-        onEdit: ({ updatedData }) => {
-            console.log('onEdit: ', updatedData)
-            setFetureCollection(updatedData)
-        }
+  const editableLayer = editableFeatureCollection && new EditableGeoJsonLayer({
+    data: editableFeatureCollection,
+    mode: ModifyMode,
+    pickable: true,
+    selectedFeatureIndexes: [selectedFeatureIndex],
+    autoHighlight: true,
+    onClick: (info) => {
+      setSelectedFeatureIndex(info.index);
+    },
+    onEdit: ({ updatedData }) => {
+      setEditableFeatureCollection(updatedData);
+    }
+  });
+
+  const readOnlyLayers = readOnlyFeatureCollections.map((collection, index) => (
+    new EditableGeoJsonLayer({
+      id: `readonly-layer-${index}`,
+      data: collection,
+      mode: ViewMode,
+      pickable: true,
+      autoHighlight: true,
     })
+  ));
 
-    console.log('layer: ', layer)
+  const layers = [editableLayer, ...readOnlyLayers].filter(Boolean);
 
-    return (
-        <div style={{ position: 'relative' }}>
-          <input type="file" onChange={onFileChange} style={{ position: 'absolute', zIndex: 1 }} />
-          <DeckGL
-            initialViewState={{
-              latitude: 12,
-              longitude: 78,
-              zoom: 3,
-            }}
-            controller={true}
-            width="100vw"
-            height="100vh"
-            layers={[layer]}
-          >
-            <Map
-              mapboxAccessToken='pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA'
-              mapStyle='mapbox://styles/mapbox/streets-v11'
-            />
-          </DeckGL>
-        </div>
-    );
-}
+  return (
+    <div>
+      <DeckGL
+        initialViewState={{
+          latitude: 12,
+          longitude: 78,
+          zoom: 3
+        }}
+        controller={true}
+        width="100vw"
+        height="100vh"
+        layers={layers}
+      >
+        <Map
+          mapboxAccessToken='pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA'
+          mapStyle='mapbox://styles/mapbox/streets-v11'
+        />
+      </DeckGL>
+      <div style={{ position: 'relative', backgroundColor: '#f0f0f0', padding: '20px' }}>
+        <label className="file-upload-btn-wrapper" style={{ zIndex: 100 }}>
+          <span className="btn">Upload Editable File</span>
+          <input type="file" onChange={(e) => onFileChange(e, 'editable')} />
+        </label>
+        <label className="file-upload-btn-wrapper" style={{ zIndex: 100, marginLeft: '20px' }}>
+          <span className="btn">Upload Read-Only File</span>
+          <input type="file" onChange={(e) => onFileChange(e, 'readonly')} />
+        </label>
+      </div>
+    </div>
+  );
+};
 
 export default GeoJSONEditor;
