@@ -35,6 +35,18 @@ const GeoJSONEditor = () => {
     const [selectedFeIndex, setSelectedFeIndex] = useState(0)
     const selectedFeatureIndexes = [selectedFeIndex]
 
+    const onFileChange = (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const geojson = JSON.parse(e.target.result);
+            setFetureCollection(geojson);
+          };
+          reader.readAsText(file);
+        }
+    };
+
     const layer = new EditableGeoJsonLayer({
         data: featureCollection,
         mode: ModifyMode,
@@ -53,22 +65,25 @@ const GeoJSONEditor = () => {
     console.log('layer: ', layer)
 
     return (
-      <DeckGL
-      initialViewState={{
-          latitude: 12,    // Default latitude
-          longitude: 78,   // Default longitude
-          zoom: 8,         // Default zoom level
-        }}
-        controller={true}
-        width="100vw"  // Set a default width
-        height="100vh" // Set a default height
-        layers={[layer]}
-      >
-        <Map
-          mapboxAccessToken='pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA'
-          mapStyle='mapbox://styles/mapbox/streets-v11'
-        />
-      </DeckGL>
+        <div style={{ position: 'relative' }}>
+          <input type="file" onChange={onFileChange} style={{ position: 'absolute', zIndex: 1 }} />
+          <DeckGL
+            initialViewState={{
+              latitude: 12,
+              longitude: 78,
+              zoom: 3,
+            }}
+            controller={true}
+            width="100vw"
+            height="100vh"
+            layers={[layer]}
+          >
+            <Map
+              mapboxAccessToken='pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA'
+              mapStyle='mapbox://styles/mapbox/streets-v11'
+            />
+          </DeckGL>
+        </div>
     );
 }
 
