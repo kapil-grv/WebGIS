@@ -1,12 +1,12 @@
-mapboxgl.accessToken = 'pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA';
 let activeLayers = [];
 let firstPointLayerId;
 
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/streets-v11',
-    center: [78, 22], // Set the center coordinates
-    zoom: 3 // Set the zoom level
+    center: [78, 22],
+    zoom: 3,
+    accessToken: window.mapboxToken
 });
 
 // Initialize legend when the map is loaded
@@ -14,7 +14,7 @@ map.on('load', () => {
     // Add zoom control
     const zoomControl = new mapboxgl.NavigationControl();
     map.addControl(zoomControl, 'top-right');
-    
+
     // Create a custom control for the legend
     const legendControl = new mapboxgl.NavigationControl();
     legendControl.onAdd = function () {
@@ -88,7 +88,7 @@ function handleCheckboxChange(checkboxes) {
 
     console.log(`Selected datasets: ${selectedDatasets}`);
     console.log(`Triggering load / unload for => ${selectedDatasets}`);
-    
+
     // Update the map based on the selected datasets
     updateMap(selectedDatasets);
 }
@@ -168,8 +168,13 @@ function toggleLayer(layerName, layerColor) {
 
 function loadDatasets(datasets) {
     datasets.forEach(dataset => {
-        if (map.getSource(`${dataset}`)) {
-            // Dataset is already loaded, remove the layer and source
+        // Check if any active layer is using the source
+        const isSourceInUse = activeLayers.some(layer => Object.keys(layer)[0] === dataset);
+        console.log(`isSourceInUse :: ${isSourceInUse}`);
+        console.log(`datasets :: ${datasets}`);
+
+        if (isSourceInUse) {
+            // Remove the layer and source only if it's in use
             map.removeLayer(`layer-${dataset}`);
             map.removeSource(`${dataset}`);
         } else {
@@ -216,7 +221,7 @@ function loadDatasets(datasets) {
                             }
                         });
 
-                        if(!firstPointLayerId) {
+                        if (!firstPointLayerId) {
                             firstPointLayerId = `layer-${dataset}`;
                             console.log(`firstPointLayerId => ${firstPointLayerId}`);
                         }
@@ -236,7 +241,9 @@ function loadDatasets(datasets) {
 
                         if (firstPointLayerId !== undefined) {
                             console.log(`firstPointLayerId => ${firstPointLayerId} | layer-${dataset}`);
-                            map.moveLayer(`layer-${dataset}`, firstPointLayerId);
+                            if (dataset != 'plantation') {
+                                map.moveLayer(`layer-${dataset}`, firstPointLayerId);
+                            }
                         }
                     }
 
@@ -349,12 +356,12 @@ function generatePopupContent(properties) {
     return popupContent;
 }
 
-document.querySelector('.close').addEventListener('click', function() {
+document.querySelector('.close').addEventListener('click', function () {
     $('#myModal').modal('hide');
 });
 
 
-window.addEventListener('click', function(event) {
+window.addEventListener('click', function (event) {
     if (event.target === document.getElementById('myModal')) {
         $('#myModal').modal('hide');
     }
@@ -459,7 +466,7 @@ function buildFilterModal(dataset, fields) {
                         }
                     });
 
-                    if(!firstPointLayerId) {
+                    if (!firstPointLayerId) {
                         firstPointLayerId = `layer-${dataset}`;
                         console.log(`firstPointLayerId => ${firstPointLayerId}`);
                     }
@@ -529,7 +536,7 @@ function buildFilterModal(dataset, fields) {
 // Function to populate the valueDropdown with a default "Select" option
 function populateValueDropdown(values) {
     const valueDropdown = document.getElementById('valueDropdown');
-    
+
     // Clear existing options
     valueDropdown.innerHTML = '';
 
@@ -538,7 +545,7 @@ function populateValueDropdown(values) {
     defaultOption.value = ''; // Set an empty value for the default option
     defaultOption.text = 'Select';
     valueDropdown.appendChild(defaultOption);
-    
+
     // Create and append options for each value
     values.forEach(value => {
         const option = document.createElement('option');

@@ -1,8 +1,8 @@
-# Tree Plantation Map
+# Web Map - Load and Filter
 
 ## Overview
 
-Tree Plantation Map is a web application for visualizing and managing geospatial data related to tree plantations. It allows users to upload CSV files containing information about tree locations, species, and conditions. The map provides features for filtering data based on species type and drawing circles.
+This is a web application for visualizing and managing geospatial data related to tree plantations. It allows users to upload CSV files containing information about tree locations, species, and conditions. The map provides features for filtering data based on species type and drawing circles.
 
 ## Installation
 

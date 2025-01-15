@@ -1,70 +1,120 @@
-# Getting Started with Create React App
+# GeoJSON Editor
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Overview
+The **GeoJSON Editor** is a React-based web application that allows users to view and edit GeoJSON files interactively. It leverages `Deck.gl` for rendering layers and `nebula.gl` for editing capabilities, integrated with a `react-map-gl` map component powered by Mapbox.
 
-## Available Scripts
+This application supports two modes:
+- **Editable Mode**: Load and modify GeoJSON data, and download the modified GeoJSON.
+- **Read-Only Mode**: Load and view multiple GeoJSON data without modification.
 
-In the project directory, you can run:
+## Features
+- Upload and manage multiple GeoJSON files.
+- Edit features in an editable GeoJSON file.
+- View multiple read-only GeoJSON layers simultaneously.
+- Interactive map navigation and feature selection.
+- Zoom and pan to the bounds of uploaded features.
+- View updated GeoJSON data in real-time as users modify the map.
 
-### `npm start`
+## Installation
+### Prerequisites
+- Node.js and npm installed on your machine.
+- A Mapbox Access Token (can be obtained from [Mapbox](https://www.mapbox.com/)).
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### Steps
+1. Clone the repository:
+   ```bash
+   git clone git@github.com:kapil-grv/WebGIS.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd nebula
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the development server:
+   ```bash
+   npm start
+   ```
+5. Open your browser and navigate to `http://localhost:3000` to use the application.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Usage
+### Uploading GeoJSON Files
+- **Editable File**:
+  - Use the "Upload Editable File" button to load a GeoJSON file for editing.
+  - Only one file can be loaded at a time for editing.
+- **Read-Only File**:
+  - Use the "Upload Read-Only File" button to load GeoJSON files that cannot be edited.
+  - Multiple files can be loaded and displayed simultaneously.
 
-### `npm test`
+### Editing GeoJSON Data
+- Click on a feature in the editable layer to select it for modification.
+- Modify features directly on the map.
+- The changes are automatically updated in the editable GeoJSON file.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Map Controls
+- Use the mouse to pan, zoom, and interact with the map.
+- Features in both editable and read-only layers can be highlighted on hover.
 
-### `npm run build`
+### Zooming to Bounds
+- When GeoJSON files are uploaded, the map automatically zooms to the bounds of the features, ensuring all features are visible on the map.
+- If multiple files are uploaded, the map zooms to the combined bounds of all the features.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## File Structure
+- **GeoJSONEditor.js**: Core component handling the map and GeoJSON layers.
+- **EditableGeoJsonLayer**: Utilized for both editable and read-only layers.
+- **Map Component**: Integrated with Mapbox for base map rendering.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Dependencies
+### Main Libraries
+- `react`: UI framework.
+- `@deck.gl/react`: Rendering geospatial data.
+- `nebula.gl`: GeoJSON editing capabilities.
+- `react-map-gl`: Mapbox integration.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation Commands
+To install the required dependencies, run:
+```bash
+npm install react @deck.gl/react nebula.gl react-map-gl
+```
 
-### `npm run eject`
+## Mapbox Configuration
+To use the application, setup env variable `REACT_APP_MAPBOX_TOKEN` with your own Mapbox token:
+```js
+export REACT_APP_MAPBOX_TOKEN='YOUR_MAPBOX_TOKEN';
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Customization
+### Initial View State
+Modify the `initialViewState` in `DeckGL` to change the default map view:
+```js
+initialViewState={{
+  latitude: 12,
+  longitude: 78,
+  zoom: 3,
+}}
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Map Style
+Change the `mapStyle` in the `Map` component to use a different Mapbox style:
+```js
+mapStyle='mapbox://styles/mapbox/streets-v11';
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Known Issues
+- Large GeoJSON files may cause performance degradation.
+- Limited error handling for invalid GeoJSON formats.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Future Improvements
+- Add support for exporting edited GeoJSON files.
+- Improve error handling and user feedback for invalid files.
+- Optimize performance for large datasets.
 
-## Learn More
+## License
+This project is licensed under the MIT License. See the LICENSE file for more details.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Acknowledgments
+- [Deck.gl](https://deck.gl/)
+- [nebula.gl](https://nebula.gl/)
+- [Mapbox](https://www.mapbox.com/)

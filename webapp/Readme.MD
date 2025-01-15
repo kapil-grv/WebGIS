@@ -59,7 +59,7 @@ curl -X POST http://localhost:3000/insert/yourfilename
 
 # View Map:
 
-* Access the map at http://localhost:3000/map.
+* Access the map at http://localhost:3001.
 
 # Filter Data:
 
@@ -88,3 +88,7 @@ curl http://localhost:3000/aggregation/yourtable/yourfield
 
 * Symbols based on the filters / data type
 * Suggestions in case of large scale data - clustering
+
+# Scribe documentation
+
+Link - `https://scribehow.com/shared/Web_GIS_application__Filter_and_Map_plantation_Assets__l88qnvl5QgOsDthKLNtXEw`

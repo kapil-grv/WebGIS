@@ -1,24 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geospatial App with Mapbox</title>
-  <link rel="stylesheet" href="https://unpkg.com/mapbox-gl/dist/mapbox-gl.css">
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web GIS App</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <div id="map"></div>
-
-  <div id="side-panel">
-    <button id="toggle-btn">Toggle Panel</button>
-    <div id="upload-panel">
-      <input type="file" id="file-input" accept=".csv, .json">
-      <button id="upload-btn">Upload File</button>
+    <div id="map" style="height: 100vh;"></div>
+    <div id="legend" class="mapboxgl-ctrl">
+        <h6>Map Legend</h6><br>
+        <div id="legend-content"></div>
     </div>
-  </div>
+    <div id="sidePanel">
+        <a href="#" onclick="toggleSidePanel()">☰</a>
+        <div class="dataset-card">
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="asset">
+                <span class="dataset-name">Asset</span>
+                <button class="filter-button" id="filterDialogasset"
+                    title="Load data before hitting Filter">Filter</button>
+            </label>
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="nursery">
+                <span class="dataset-name">Nursery</span>
+                <button class="filter-button" id="filterDialognursery"
+                    title="Load data before hitting Filter">Filter</button>
+            </label>
+            <label class="dataset-option">
+                <input type="checkbox" name="dataset" value="plantation">
+                <span class="dataset-name">Plantation</span>
+                <button class="filter-button" id="filterDialogplantation"
+                    title="Load data before hitting Filter">Filter</button>
+            </label>
+        </div>
+    </div>
 
-  <script src="https://unpkg.com/mapbox-gl/dist/mapbox-gl.js"></script>
-  <script src="app.js"></script>
+    <div id="openBtn" onclick="toggleSidePanel()">☰</div>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeFilterModal()">&times;</span>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+    <script>
+        // Prompt for Mapbox token and store it in a global variable
+        window.mapboxToken = prompt("Please enter your Mapbox access token:");
+
+        if (window.mapboxToken) {
+            // Store the token globally for later use
+            console.log("Mapbox token received: ", window.mapboxToken);
+        } else {
+            alert("Mapbox token is required.");
+        }
+    </script>
+
+    <script src="script.js"></script>
 </body>
+
 </html>

@@ -4,9 +4,16 @@ const path = require('path');
 const duckdb = require('duckdb');
 const fs = require('fs');
 const csvParser = require('csv-parser');
+const dotenv = require('dotenv');
 
 const app = express();
-const port = 3000;
+
+// Load environment variables from .env file
+dotenv.config();
+
+// Retrieved from .env file
+const mapboxToken = process.env.MAPBOX_TOKEN;
+const port = process.env.PORT;
 
 let con; // Declare the DuckDB connection variable
 const db = new duckdb.Database('duckdb.db');
@@ -17,17 +24,17 @@ let ingestedFiles = [];
 // Load the spatial extension
 con.exec('INSTALL spatial;', (err, result) => {
     if (err) {
-      console.error('Error installing spatial extension:', err);
+        console.error('Error installing spatial extension:', err);
     } else {
-      console.log('Spatial extension installed successfully');
+        console.log('Spatial extension installed successfully');
     }
 });
-  
+
 con.exec('LOAD spatial;', (err, result) => {
     if (err) {
-      console.error('Error loading spatial extension:', err);
+        console.error('Error loading spatial extension:', err);
     } else {
-      console.log('Spatial extension loaded successfully');
+        console.log('Spatial extension loaded successfully');
     }
 });
 
@@ -65,25 +72,24 @@ function createTable(headers, tableName) {
 
     const createTableQuery = `CREATE TABLE IF NOT EXISTS ${tableName} (${columns.join(', ')})`;
     console.log(`createTableQuery => ${createTableQuery}`);
-    
+
     con.run(createTableQuery, (err, result) => {
-      if (err) {
-        console.error('Error creating dynamic_table:', err);
-      } else {
-        console.log('dynamic_table created or already exists');
-      }
+        if (err) {
+            console.error('Error creating dynamic_table:', err);
+        } else {
+            console.log('dynamic_table created or already exists');
+        }
     });
 }
 
 // Sample route to serve the Mapbox access token to the frontend
 app.get('/mapbox-token', (req, res) => {
-    const mapboxToken = 'pk.eyJ1IjoibWlrZS11c2VyIiwiYSI6ImNsYjBkNWQ3OTFnOGYzeHFtNGs3MGcyZHYifQ.1Vqi8jnAO6iMTPi9EPXkWA'; // Replace with your Mapbox access token
     res.json({ token: mapboxToken });
 });
 
 // Sample route to insert geospatial data
 app.post('/insert/:filename', (req, res) => {
-    
+
     const filename = req.params.filename;
 
     if (!ingestedFiles.includes(filename)) {
@@ -116,7 +122,7 @@ app.post('/insert/:filename', (req, res) => {
                 // Insert each row into the dynamic_table
                 for (const row of csvData) {
                     const columns = Object.keys(row);
-                
+
                     let geomValue;
 
                     if (wktColumn && row[wktColumn]) {
@@ -128,10 +134,10 @@ app.post('/insert/:filename', (req, res) => {
                     }
 
                     console.log(`constructed geom => ${geomValue}`);
-                    
+
                     // Add 'geom' field to the columns
                     columns.push('geom');
-                
+
                     const values = columns.map(column => {
                         if (column === 'latitude' || column === 'longitude') {
                             return parseFloat(row[column]);
@@ -147,11 +153,11 @@ app.post('/insert/:filename', (req, res) => {
                     // Replace the corresponding positions with the 'geom' value
                     const geomIndex = columns.indexOf('geom');
                     values[geomIndex] = geomValue;
-                
+
                     console.log(`filename => ${filename}`);
                     console.log(`values => ${values}`);
                     console.log(`insert command => {INSERT INTO ${filename} VALUES (${values.join(', ')})}`)
-                
+
                     con.run(
                         `INSERT INTO ${filename} (${columns.join(', ')}) VALUES (${values.join(', ')})`,
                         (err, result) => {
@@ -162,12 +168,12 @@ app.post('/insert/:filename', (req, res) => {
                             }
                         }
                     );
-                }            
+                }
             });
-        res.status(200).json({"Data inserted": result});
+        res.status(200).json({ "Data inserted": result });
         ingestedFiles.push(filename);
     } else {
-        res.status(405 ).json({"message": "Not allowed to load duplicate layers. Please rename the file or load different data."});
+        res.status(405).json({ "message": "Not allowed to load duplicate layers. Please rename the file or load different data." });
     }
 });
 
@@ -281,7 +287,7 @@ app.get('/favicon.ico', (req, res) => {
 app.get('/image/:imageName', (req, res) => {
     const imageName = req.params.imageName;
     const imagePath = path.join(__dirname, 'static', imageName);
-  
+
     // Send the image in the response
     res.sendFile(imagePath);
 });
